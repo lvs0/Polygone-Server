@@ -1,0 +1,13 @@
+[package]
+name = "polygone-server"
+version = "0.1.0"
+edition = "2021"
+authors = ["Lévy <contact@soe-ai.dev>"]
+
+[dependencies]
+polygone-core = { path = "../Polygone" }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+clap = { version = "4", features = ["derive"] }
