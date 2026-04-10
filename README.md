@@ -32,3 +32,4 @@ Edit `docker-compose.yml` to change:
 
 ## ⚖️ License
 MIT License - 2026 Lévy / Polygone Ecosystem.
+by Hope
