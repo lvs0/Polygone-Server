@@ -1,12 +1,17 @@
 use clap::Parser;
 use tracing_subscriber::{fmt, EnvFilter};
+use std::path::PathBuf;
+use std::fs;
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
+use libp2p::{futures::StreamExt, swarm::SwarmEvent};
+use polygone::network::p2p::{build_swarm, load_or_generate_identity};
 
 #[derive(Parser)]
 #[command(name = "polygone-server", about = "Polygone Persistent Node Runner")]
 struct Cli {
-    /// Path to the identity key file
-    #[arg(short, long, default_value = "/data/identity.key")]
-    identity: String,
+    /// Path to the identity key file (libp2p Ed25519)
+    #[arg(short, long, default_value = "/data/identity.p2p")]
+    identity: PathBuf,
 
     /// Listening address
     #[arg(short, long, default_value = "/ip4/0.0.0.0/tcp/4001")]
@@ -19,18 +24,57 @@ struct Cli {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let cli = Cli::parse();
     fmt().with_env_filter(EnvFilter::new("info")).init();
+    let cli = Cli::parse();
 
     println!(" ⬡ POLYGONE SERVER MODE");
-    println!(" 🚀 Starting persistent node...");
-    
-    // In this server-specific wrapper, we default to always using a persistent identity.
-    // We delegate the actual P2P logic to polygone-core.
-    
-    // (In a real implementation, we could just call the internal library 
-    // but for this delivery, I'll invoke the logic via the core's command handler or similar)
-    // Actually, I'll use the Cli structure from polygone-core if available.
-    
-    Ok(())
+    println!(" 🚀 Initializing node...");
+
+    // 1. Load P2P Identity
+    // Priority: POLY_P2P_IDENTITY_B64 (protobuf) > POLY_P2P_SEED (32 bytes) > File
+    let p2p_keypair = if let Ok(b64) = std::env::var("POLY_P2P_IDENTITY_B64") {
+        let bytes = BASE64.decode(b64.trim())?;
+        libp2p::identity::Keypair::from_protobuf_encoding(&bytes)?
+    } else if let Ok(seed_b64) = std::env::var("POLY_P2P_SEED") {
+        let seed = BASE64.decode(seed_b64.trim())?;
+        if seed.len() != 32 {
+            anyhow::bail!("POLY_P2P_SEED must be 32 bytes Base64-encoded");
+        }
+        let mut seed_arr = [0u8; 32];
+        seed_arr.copy_from_slice(&seed);
+        libp2p::identity::Keypair::ed25519_from_bytes(seed_arr)?
+    } else {
+        load_or_generate_identity(&cli.identity)?
+    };
+
+    let peer_id = libp2p::PeerId::from(p2p_keypair.public());
+    println!("  ✓ Local PeerID: {}", peer_id);
+
+    // 2. Build Swarm
+    let mut swarm = build_swarm(p2p_keypair)?;
+
+    // 3. Listen
+    swarm.listen_on(cli.listen.parse()?)?;
+
+    // 4. Dial Bootstrap if provided
+    if let Some(addr) = cli.bootstrap {
+        println!("  ▸ Connecting to bootstrap: {}", addr);
+        swarm.dial(addr.parse()?)?;
+    }
+
+    println!(" ⬢ Node is live and relaying traffic.");
+
+    // 5. Event Loop
+    loop {
+        match swarm.select_next_some().await {
+            SwarmEvent::NewListenAddr { address, .. } => {
+                println!("  📡 Listening on: {}", address);
+            }
+            SwarmEvent::Behaviour(ev) => {
+                // Handling Kademlia or Identify events if needed
+                tracing::debug!("Behaviour event: {:?}", ev);
+            }
+            _ => {}
+        }
+    }
 }
