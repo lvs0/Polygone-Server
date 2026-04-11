@@ -2,8 +2,8 @@ use clap::Parser;
 use tracing_subscriber::{fmt, EnvFilter};
 use std::path::PathBuf;
 use std::fs;
-use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
-use libp2p::{futures::StreamExt, swarm::SwarmEvent};
+use polygone::base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
+use polygone::libp2p::{self, futures::StreamExt, swarm::SwarmEvent};
 use polygone::network::p2p::{build_swarm, load_or_generate_identity};
 
 #[derive(Parser)]
