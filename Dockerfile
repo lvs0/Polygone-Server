@@ -11,10 +11,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/polygone
-# Copy only the server files
+# Build the server with extreme RAM limits for Render Free Tier (512MB)
+ENV RUSTFLAGS="-C debuginfo=0 -C codegen-units=1"
+ENV CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
+ENV CARGO_PROFILE_RELEASE_LTO=true
+ENV CARGO_INCREMENTAL=0
+
 COPY . .
 
-# Build the server with -j 1 to avoid Out Of Memory on Render's 512MB limit
 RUN cargo build --release -j 1
 
 # --- Runtime Stage ---
