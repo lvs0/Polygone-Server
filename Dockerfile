@@ -3,6 +3,8 @@ FROM rust:1-slim-bookworm AS builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
+    build-essential \
+    clang \
     pkg-config \
     libssl-dev \
     git \
