@@ -6,14 +6,16 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
     git \
+    cmake \
+    perl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/polygone
 # Copy only the server files
 COPY . .
 
-# Build the server (core will be pulled from git as defined in Cargo.toml)
-RUN cargo build --release
+# Build the server with -j 1 to avoid Out Of Memory on Render's 512MB limit
+RUN cargo build --release -j 1
 
 # --- Runtime Stage ---
 FROM python:3.11-slim-bookworm
