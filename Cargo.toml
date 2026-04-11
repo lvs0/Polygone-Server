@@ -15,8 +15,8 @@ base64 = "0.22"
 libp2p = { version = "0.53", features = ["tokio", "tcp", "noise", "yamux", "kad", "identify", "macros"] }
 
 [profile.release]
-opt-level = "z"        # Optimize for size
-codegen-units = 1      # Reduce parallel compilation RAM
-lto = "fat"            # Full Link Time Optimization (smaller binary)
-panic = "abort"        # Reduce binary overhead
-strip = true           # Remove symbols from binary
+opt-level = 3          # Maximize performance
+codegen-units = 1      # Better optimizations
+lto = "fat"            # Thin or Fat LTO for binary speed
+panic = "abort"        # Keep for smaller binary overhead
+strip = true           # Keep to remove symbols from binary

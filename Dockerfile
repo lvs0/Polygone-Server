@@ -11,15 +11,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/polygone
-# Build the server with extreme RAM limits for Render Free Tier (512MB)
-ENV RUSTFLAGS="-C debuginfo=0 -C codegen-units=1"
-ENV CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
-ENV CARGO_PROFILE_RELEASE_LTO=true
-ENV CARGO_INCREMENTAL=0
-
 COPY . .
 
-RUN cargo build --release -j 1
+# Build the server (core will be pulled from git)
+RUN cargo build --release
 
 # --- Runtime Stage ---
 FROM python:3.11-slim-bookworm
@@ -32,7 +27,7 @@ WORKDIR /app
 # Copy binary
 COPY --from=builder /usr/src/polygone/target/release/polygone-server /usr/local/bin/polygone-server
 
-# Copy pulse and entrypoint (which are now at root of repo)
+# Copy pulse and entrypoint
 COPY pulse.py .
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
