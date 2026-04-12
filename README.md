@@ -4,6 +4,12 @@
 
 Polygone-Server is a production-ready wrapper designed to run a Polygone node 24/7 on servers and VPS using Docker. It ensures your PeerId persists across restarts and manages caching for the Drive network.
 
+---
+
+**Project origin · Origine :** French engineering · **[l-vs](https://github.com/lvs0)** · collective **Hope** (*by Hope*). Public focus: **post-quantum** protocols — not hosting economics or free-tier setups.
+
+---
+
 ## 🚀 Key Features
 
 - **Persistent Identity**: Automatically manages `identity.key` to ensure your node keeps its PeerId and reputation.
@@ -31,5 +37,4 @@ Edit `docker-compose.yml` to change:
 - **Healthchecks**: Internal monitoring of swarm connectivity.
 
 ## ⚖️ License
-MIT License - 2026 Lévy / Polygone Ecosystem.
-by Hope
+MIT License — 2026 · **l-vs** · **Hope** (*by Hope*) · Polygone ecosystem

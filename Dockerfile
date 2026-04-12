@@ -1,42 +1,32 @@
-# --- Build Stage ---
+# ── Build Stage ──────────────────────────────────────────────────────────────
 FROM rust:1-slim-bookworm AS builder
 
-# Install build dependencies
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    clang \
-    pkg-config \
-    libssl-dev \
-    git \
-    cmake \
-    perl \
+    build-essential clang pkg-config libssl-dev git cmake perl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/polygone
 COPY . .
 
-# Build the server (core will be pulled from git)
 RUN cargo build --release
 
-# --- Runtime Stage ---
+# ── Runtime Stage ─────────────────────────────────────────────────────────────
 FROM python:3.11-slim-bookworm
 
-# Install CA certificates
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy binary
 COPY --from=builder /usr/src/polygone/target/release/polygone-server /usr/local/bin/polygone-server
-
-# Copy pulse and entrypoint
 COPY pulse.py .
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
-# Render expects the app to bind to $PORT
+# PORT is the HTTP health-check port (used by Render / reverse proxy)
+# 4001 is the libp2p P2P port
 EXPOSE 8080
 EXPOSE 4001
 
 ENTRYPOINT ["./entrypoint.sh"]
-CMD ["--identity", "/app/identity.p2p", "--listen", "/ip4/0.0.0.0/tcp/4001"]
+CMD ["--identity", "/data/identity.p2p", "--listen", "/ip4/0.0.0.0/tcp/4001"]
