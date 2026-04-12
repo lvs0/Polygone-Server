@@ -1,19 +1,24 @@
 #!/bin/bash
 # ⬡ POLYGONE VPS RUNNER — by Hope
 
-# 1. Start pulse FIRST, wait until it binds before starting the node
-echo "Launching Polygone Pulse (Health Check)..."
-python3 pulse.py &
+set -e
 
-PORT="${PORT:-8080}"
-for i in $(seq 1 30); do
-    if curl -s -o /dev/null "http://127.0.0.1:${PORT}/"; then
-        echo " [✓] Pulse ready on :${PORT}"
-        break
-    fi
-    sleep 0.5
-done
+DATA_DIR="/data"
+mkdir -p "$DATA_DIR"
 
-# 2. Start the P2P node
-echo "Launching Polygone Node..."
+# Generate identity if not exists
+if [ ! -f "$DATA_DIR/identity.pem" ] && [ -z "$POLY_P2P_IDENTITY_B64" ]; then
+    echo "  [!] No identity found. Generate with:"
+    echo "      openssl genpkey -algorithm ED25519 > $DATA_DIR/identity.pem"
+    echo "      Or set POLY_P2P_IDENTITY_B64 environment variable"
+    exit 1
+fi
+
+# Start pulse.py for health checks
+echo "  Launching Polygone Pulse..."
+python3 /app/pulse.py &
+sleep 1
+
+# Start the P2P node
+echo "  Launching Polygone Node..."
 exec polygone-server "$@"

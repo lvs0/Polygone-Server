@@ -7,10 +7,17 @@ services:
     volumes:
       - polygone-data:/data
     ports:
-      - "4001:4001"
+      - "4001:4001"  # P2P
+      - "8080:8080"  # Health/Pulse
     restart: always
     environment:
       - RUST_LOG=info
+      - PORT=8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   polygone-data:
